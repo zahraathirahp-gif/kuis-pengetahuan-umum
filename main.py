@@ -80,18 +80,19 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     uid = update.effective_user.id
     chat_id = update.effective_chat.id
+    chat_type = update.effective_chat.type
     raw_text = (msg.text or msg.caption or "").strip()
     text_l = raw_text.lower().split('@')[0]
 
-    if update.effective_chat.type in ["group", "supergroup"] and chat_id not in db['groups']:
+    if chat_type in ["group", "supergroup"] and chat_id not in db['groups']:
         db['groups'].append(chat_id); save_db()
 
-    # --- ADMIN INPUT LOGIC (TERISOLASI) ---
+    # --- ADMIN INPUT LOGIC (HANYA DI PRIVATE CHAT) ---
     state = context.user_data.get('state')
-    if state and uid == ADMIN_ID:
+    if state and uid == ADMIN_ID and chat_type == "private":
         if state == 'w_ads':
             db['ads_text'] = msg.caption or msg.text; db['ads_photo'] = msg.photo[-1].file_id if msg.photo else db['ads_photo']
-            save_db(); context.user_data['state'] = None; return await msg.reply_text("✅ Iklan OK")
+            save_db(); context.user_data.clear(); return await msg.reply_text("✅ Iklan OK")
         elif state == 'w_q_cat_name':
             context.user_data['new_q'] = {"cat": raw_text}; context.user_data['state'] = 'w_q_ques'
             return await msg.reply_text("Kirim Soalnya:")
@@ -102,13 +103,13 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
             cat = context.user_data['new_q']['cat']
             if cat not in db['questions']: db['questions'][cat] = []
             db['questions'][cat].append({"q": context.user_data['new_q']['q'], "a": raw_text})
-            save_db(); context.user_data['state'] = None; return await msg.reply_text(f"✅ Soal masuk ke {cat}")
+            save_db(); context.user_data.clear(); return await msg.reply_text(f"✅ Soal masuk ke {cat}")
         elif state == 'w_edit_cat_new':
             old_cat = context.user_data['old_cat_name']
             db['questions'][raw_text] = db['questions'].pop(old_cat)
-            save_db(); context.user_data['state'] = None; return await msg.reply_text(f"✅ Nama Kategori {old_cat} diganti ke {raw_text}")
+            save_db(); context.user_data.clear(); return await msg.reply_text(f"✅ Nama Kategori diganti ke {raw_text}")
         elif state == 'w_bc':
-            context.user_data['state'] = None
+            context.user_data.clear()
             for g in db['groups']:
                 try: await msg.copy(chat_id=g)
                 except: pass
@@ -116,7 +117,7 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # --- USER COMMANDS ---
     if text_l == "/start":
-        if update.effective_chat.type == "private":
+        if chat_type == "private":
             kb = [[InlineKeyboardButton("➕ Tambah ke Grup", url=f"https://t.me/{context.bot.username}?startgroup=true")]]
             intro = f"🤖 KUIS BOT\n\n📢 {db['ads_text']}"
             if db.get('ads_photo'): return await msg.reply_photo(db['ads_photo'], caption=intro, reply_markup=InlineKeyboardMarkup(kb))
@@ -143,13 +144,13 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if text_l == "/admin" and uid == ADMIN_ID:
         kb = [[InlineKeyboardButton("📢 BC", callback_data='adm_bc')], [InlineKeyboardButton("➕ Soal", callback_data='adm_q')], [InlineKeyboardButton("✏️ Edit Kategori", callback_data='adm_edit_cat')], [InlineKeyboardButton("📤 DB", callback_data='adm_db')], [InlineKeyboardButton("🖼 Ads", callback_data='adm_ads')]]
-        return await msg.reply_text("🛠 ADMIN", reply_markup=InlineKeyboardMarkup(kb))
+        return await msg.reply_text("🛠 ADMIN PANEL", reply_markup=InlineKeyboardMarkup(kb))
 
-    # JAWABAN (DIBACA HANYA JIKA TIDAK SEDANG STATE ADMIN)
+    # JAWABAN
     if chat_id in current_games and text_l == current_games[chat_id]['ans']:
         game = current_games[chat_id]; game['task'].cancel()
         if len(lobby_data.get(chat_id, {}).get('players', [])) < 2:
-            await msg.reply_text(f"✅ {update.effective_user.first_name} Benar! (Tapi poin 0, butuh 2 pemain).")
+            await msg.reply_text(f"✅ {update.effective_user.first_name} Benar! (Poin 0, butuh 2 pemain).")
         else:
             s_uid = str(uid)
             if s_uid not in db['users']: db['users'][s_uid] = {"name": update.effective_user.first_name, "pts": 0}
@@ -166,36 +167,45 @@ async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             players_str = "\n".join([f"{i+1}. {n}" for i, n in enumerate(lobby_data[cid]['names'])])
             kb = [[InlineKeyboardButton("Join🤝", callback_data="lobby_join"), InlineKeyboardButton("Mulai▶️", callback_data="lobby_start")]]
             await q.message.edit_text(f"🎮 **LOBBY**\n\nPlayer: \n{players_str}", reply_markup=InlineKeyboardMarkup(kb))
-        await q.answer()
     elif d == "lobby_start":
         if cid in lobby_data:
             if uid != lobby_data[cid]['host']: return await q.answer("Hanya Host yang bisa mulai!", show_alert=True)
             kb = [[InlineKeyboardButton(f"📂 {c}", callback_data=f"start_{c}")] for c in db['questions'].keys()]
             await q.message.edit_text("PILIH KATEGORI:", reply_markup=InlineKeyboardMarkup(kb))
-        await q.answer()
     elif d.startswith('start_'):
         await q.message.delete(); await send_question(context, cid, d.split('_')[1])
     elif d == 'adm_q':
-        kb = [[InlineKeyboardButton(c, callback_data=f"sel_cat_{c}")] for c in db['questions'].keys()]
-        kb.append([InlineKeyboardButton("➕ Baru", callback_data="new_cat")]); await q.message.reply_text("Kategori:", reply_markup=InlineKeyboardMarkup(kb))
-    elif d.startswith('sel_cat_'):
-        context.user_data['state'] = 'w_q_ques'; context.user_data['new_q'] = {"cat": d.replace('sel_cat_', '')}; await q.message.reply_text("Kirim Soal:")
+        kb = [[InlineKeyboardButton(c, callback_data=f"selcat_{c}")] for c in db['questions'].keys()]
+        kb.append([InlineKeyboardButton("➕ Baru", callback_data="new_cat")]); await q.message.reply_text("Pilih Kategori:", reply_markup=InlineKeyboardMarkup(kb))
+    elif d.startswith('selcat_'):
+        cat = d.replace('selcat_', '')
+        kb = [[InlineKeyboardButton("➕ Tambah Soal", callback_data=f"addq_{cat}")], [InlineKeyboardButton("🗑️ Hapus Soal", callback_data=f"delq_{cat}")]]
+        await q.message.reply_text(f"Kategori: {cat}", reply_markup=InlineKeyboardMarkup(kb))
+    elif d.startswith('addq_'):
+        context.user_data['state'] = 'w_q_ques'; context.user_data['new_q'] = {"cat": d.replace('addq_', '')}; await q.message.reply_text("Kirim Soal:")
+    elif d.startswith('delq_'):
+        cat = d.replace('delq_', ''); q_list = db['questions'].get(cat, [])
+        if not q_list: return await q.answer("Kosong!", show_alert=True)
+        kb = [[InlineKeyboardButton(f"{sq['q'][:20]}...", callback_data=f"remq_{cat}_{i}")] for i, sq in enumerate(q_list)]
+        await q.message.reply_text("Klik soal yang ingin dihapus:", reply_markup=InlineKeyboardMarkup(kb))
+    elif d.startswith('remq_'):
+        _, cat, idx = d.split('_'); db['questions'][cat].pop(int(idx)); save_db()
+        await q.message.edit_text("✅ Soal dihapus!"); await q.answer()
     elif d == "new_cat":
-        context.user_data['state'] = 'w_q_cat_name'; await q.message.reply_text("Kirim Nama Kategori Baru:")
+        context.user_data['state'] = 'w_q_cat_name'; await q.message.reply_text("Kirim Nama Kategori Baru (lewat PC):")
     elif d == 'adm_edit_cat':
         kb = [[InlineKeyboardButton(c, callback_data=f"editcat_{c}")] for c in db['questions'].keys()]
-        await q.message.reply_text("Pilih Kategori yang mau di-edit namanya:", reply_markup=InlineKeyboardMarkup(kb))
+        await q.message.reply_text("Pilih Kategori untuk di-edit namanya:", reply_markup=InlineKeyboardMarkup(kb))
     elif d.startswith('editcat_'):
         context.user_data['state'] = 'w_edit_cat_new'; context.user_data['old_cat_name'] = d.replace('editcat_', '')
-        await q.message.reply_text(f"Kirim nama baru untuk kategori {context.user_data['old_cat_name']}:")
+        await q.message.reply_text(f"Kirim nama baru untuk {context.user_data['old_cat_name']} (lewat PC):")
     elif d == 'adm_db': save_db(); await q.message.reply_document(open(DATA_FILE, 'rb'))
-    elif d == 'adm_ads': context.user_data['state'] = 'w_ads'; await q.message.reply_text("Kirim Iklan:")
-    elif d == 'adm_bc': context.user_data['state'] = 'w_bc'; await q.message.reply_text("Kirim BC:")
-    elif d == 'game_skip' and cid in current_games:
+    elif d == 'adm_ads': context.user_data['state'] = 'w_ads'; await q.message.reply_text("Kirim Iklan (lewat PC):")
+    elif d == 'adm_bc': context.user_data['state'] = 'w_bc'; await q.message.reply_text("Kirim BC (lewat PC):")
+    elif d in ['game_skip', 'game_stop'] and cid in current_games:
         current_games[cid]['task'].cancel(); cat = current_games[cid]['cat']
-        del current_games[cid]; await send_question(context, cid, cat)
-    elif d == 'game_stop' and cid in current_games:
-        current_games[cid]['task'].cancel(); del current_games[cid]; await q.message.reply_text("Stop.")
+        if d == 'game_skip': del current_games[cid]; await send_question(context, cid, cat)
+        else: del current_games[cid]; await q.message.reply_text("Stop.")
     await q.answer()
 
 def main():
