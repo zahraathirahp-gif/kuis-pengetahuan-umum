@@ -12,15 +12,16 @@ DATA_FILE = 'quiz_data.json'
 
 def load_db():
     if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, 'r') as f:
-            return json.load(f)
+        try:
+            with open(DATA_FILE, 'r') as f:
+                return json.load(f)
+        except: pass
     return {
         "users": {}, 
         "questions": {
-            "Umum": [{"q": "Menara yang miring di Italia", "h": "p__a", "a": "pisa"}],
-            "Sejarah": [{"q": "Presiden pertama RI", "h": "S__k__no", "a": "soekarno"}]
+            "Umum": [{"q": "Menara miring di Italia", "h": "p__a", "a": "pisa"}]
         }, 
-        "ads_text": "Bot Tebak-tebakan v1.0",
+        "ads_text": "PASANG IKLAN DISINI @admin",
         "ads_photo": None
     }
 
@@ -30,45 +31,63 @@ def save_db():
     with open(DATA_FILE, 'w') as f:
         json.dump(db, f, indent=4)
 
-current_games = {} # {chat_id: {data}}
-group_players = {} # {chat_id: set(user_ids)} untuk cek minimal 2 orang
+current_games = {} 
+group_players = {}
 
 # --- ADMIN PANEL ---
 async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    if user_id != ADMIN_ID:
-        return await update.message.reply_text("❌ Anda bukan admin.")
+    if update.effective_user.id != ADMIN_ID:
+        return await update.message.reply_text("❌ Akses Ditolak.")
     
     keyboard = [
-        [InlineKeyboardButton("📤 Send DB", callback_data='adm_send_db')],
-        [InlineKeyboardButton("🖼 Set Iklan", callback_data='adm_set_ads')],
-        [InlineKeyboardButton("➕ Tambah Soal", callback_data='adm_add_ques')]
+        [InlineKeyboardButton("📤 Backup Database (Send DB)", callback_data='adm_send_db')],
+        [InlineKeyboardButton("🖼 Set Banner & Iklan", callback_data='adm_set_ads')],
+        [InlineKeyboardButton("➕ Tambah Soal Kategori", callback_data='adm_add_ques')]
     ]
-    await update.message.reply_text("🛠 **ADMIN CONTROL PANEL**", reply_markup=InlineKeyboardMarkup(keyboard))
+    await update.message.reply_text("🛠 **ADMINISTRATOR PANEL**", reply_markup=InlineKeyboardMarkup(keyboard))
 
-# --- START & CATEGORY ---
+# --- START HANDLER ---
 async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
-    # Tombol Kategori
+    chat = update.effective_chat
+    user = update.effective_user
+
+    # JIKA DI PC / PRIVATE CHAT
+    if chat.type == "private":
+        return await update.message.reply_text(
+            f"👋 Halo {user.first_name}!\n\n"
+            "Bot ini adalah Bot Tebak-tebakan Group.\n"
+            "Silahkan masukkan bot ini ke grup kamu untuk mulai bermain bersama teman-teman!",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("➕ Tambahkan ke Grup", url=f"https://t.me/{context.bot.username}?startgroup=true")
+            ]])
+        )
+
+    # JIKA DI GRUP
     keyboard = []
     for cat in db['questions'].keys():
-        keyboard.append([InlineKeyboardButton(f"📁 {cat}", callback_data=f"start_{cat}")])
+        keyboard.append([InlineKeyboardButton(f"🎮 Kategori {cat}", callback_data=f"start_{cat}")])
     
-    text = "🎮 **TEBAK-TEBAKAN UMUM**\n\nPilih kategori soal di bawah ini untuk memulai:"
-    await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+    await update.message.reply_text(
+        "🕹 **PERMAINAN DIMULAI**\n\nSilahkan pilih kategori soal:",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 
-# --- QUIZ ENGINE ---
+# --- SEND QUESTION ENGINE ---
 async def send_question(context, chat_id, category):
-    q_data = random.choice(db['questions'][category])
+    if chat_id not in current_games: return
     
-    text = f"✨ **KATEGORI: {category}** ✨\n\n"
-    text += f"Soal: *{q_data['q']}*\n"
-    text += f"Petunjuk: `{q_data['h']}`\n\n"
+    q_list = db['questions'].get(category, db['questions']["Umum"])
+    q_data = random.choice(q_list)
+    
+    # UI Tampilan Soal & Iklan
+    text = f"━━━━━━━━━━━━━━\n"
+    text += f"📣 **SPONSORED:**\n{db['ads_text']}\n"
+    text += f"━━━━━━━━━━━━━━\n\n"
+    text += f"❓ **SOAL:** `{q_data['q']}`\n"
+    text += f"💡 **CLUE:** `{q_data['h']}`\n\n"
     text += f"⏱ *Waktu: 15 Detik*\n"
-    text += f"⚠️ *Minimal 2 orang untuk dapat poin!*\n"
-    text += f"━━━━━━━━━━━━━━\n{db['ads_text']}"
+    text += f"👥 *Min. 2 Player agar poin cair*"
 
-    # Tombol Control
     kb = [[
         InlineKeyboardButton("⏭ Skip", callback_data="game_skip"),
         InlineKeyboardButton("🛑 Stop", callback_data="game_stop")
@@ -79,17 +98,17 @@ async def send_question(context, chat_id, category):
     else:
         msg = await context.bot.send_message(chat_id, text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(kb))
 
-    current_games[chat_id] = {
-        "ans": q_data['a'].lower(),
+    current_games[chat_id].update({
+        "ans": q_data['a'].lower().strip(),
         "cat": category,
         "answered": False,
-        "msg_id": msg.message_id,
-        "start_by": None # Bisa diisi ID yang mulai
-    }
+        "msg_id": msg.message_id
+    })
 
     await asyncio.sleep(15)
+    # Check if still active and not answered
     if chat_id in current_games and not current_games[chat_id]['answered']:
-        await context.bot.send_message(chat_id, f"⌛ Waktu habis! Jawabannya: *{q_data['a']}*")
+        await context.bot.send_message(chat_id, f"⌛ **WAKTU HABIS!**\nJawabannya adalah: *{q_data['a']}*")
         await asyncio.sleep(2)
         await send_question(context, chat_id, category)
 
@@ -98,96 +117,105 @@ async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     chat_id = query.message.chat_id
     data = query.data
+    user_id = query.from_user.id
 
-    # Admin actions
     if data.startswith('adm_'):
-        if query.from_user.id != ADMIN_ID: return await query.answer("Bukan Admin!")
-        
+        if user_id != ADMIN_ID: return await query.answer("Bukan Admin!")
         if data == 'adm_send_db':
             save_db()
-            await query.message.reply_document(open(DATA_FILE, 'rb'))
+            await query.message.reply_document(open(DATA_FILE, 'rb'), caption="Backup Data")
         elif data == 'adm_set_ads':
             context.user_data['state'] = 'waiting_ads'
-            await query.message.reply_text("Kirim Foto + Caption Iklan.")
+            await query.message.reply_text("Kirim Foto + Caption untuk Iklan.")
         elif data == 'adm_add_ques':
             context.user_data['state'] = 'waiting_ques'
             await query.message.reply_text("Format: Kategori | Soal | Clue | Jawaban")
     
-    # Game actions
     elif data.startswith('start_'):
         cat = data.split('_')[1]
+        current_games[chat_id] = {"answered": False} # Init game state
         await query.message.delete()
         await send_question(context, chat_id, cat)
         
     elif data == 'game_skip':
         if chat_id in current_games:
-            cat = current_games[chat_id]['cat']
             current_games[chat_id]['answered'] = True
-            await query.message.reply_text("⏭ Soal dilewati...")
-            await send_question(context, chat_id, cat)
+            await query.message.reply_text("⏭ Soal dilewati oleh admin/player...")
+            await send_question(context, chat_id, current_games[chat_id]['cat'])
             
     elif data == 'game_stop':
         if chat_id in current_games:
-            current_games[chat_id]['answered'] = True
-            del current_games[chat_id]
-            await query.message.reply_text("🛑 Game dihentikan.")
+            current_games.pop(chat_id, None)
+            await query.message.reply_text("🛑 Permainan telah dihentikan.")
 
     await query.answer()
 
-# --- ANSWER CHECKER ---
-async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# --- MESSAGE HANDLER (ANSWERS & ADMIN INPUT) ---
+async def handle_all_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.text: return
+    
     chat_id = update.effective_chat.id
     user = update.effective_user
-    
-    # Admin Input Logic
+    text_input = update.message.text.lower().strip()
+
+    # LOGIKA ADMIN (DI PRIVATE)
     state = context.user_data.get('state')
-    if update.effective_chat.type == 'private' and state:
+    if update.effective_chat.type == "private" and user.id == ADMIN_ID and state:
         if state == 'waiting_ads':
             db['ads_text'] = update.message.caption or update.message.text
             if update.message.photo: db['ads_photo'] = update.message.photo[-1].file_id
             save_db(); context.user_data['state'] = None
-            await update.message.reply_text("✅ Iklan di-set!")
+            await update.message.reply_text("✅ Iklan & Banner Berhasil Diperbarui!")
         elif state == 'waiting_ques':
             try:
-                k, s, c, j = update.message.text.split("|")
-                k=k.strip(); s=s.strip(); c=c.strip(); j=j.strip()
+                parts = update.message.text.split("|")
+                k, s, c, j = [p.strip() for p in parts]
                 if k not in db['questions']: db['questions'][k] = []
-                db['questions'][k].append({"q":s, "h":c, "a":j})
+                db['questions'][k].append({"q": s, "h": c, "a": j})
                 save_db(); context.user_data['state'] = None
-                await update.message.reply_text(f"✅ Soal masuk ke {k}!")
-            except: await update.message.reply_text("Format salah!")
+                await update.message.reply_text(f"✅ Soal berhasil ditambah ke {k}!")
+            except: await update.message.reply_text("❌ Gagal. Pastikan format: Kategori | Soal | Clue | Jawaban")
         return
 
-    # Quiz Answer Logic
+    # LOGIKA JAWABAN (DI GRUP)
     if chat_id in current_games and not current_games[chat_id]['answered']:
-        # Track Pemain (Cek curang)
+        # Track pemain unik di grup
         if chat_id not in group_players: group_players[chat_id] = set()
         group_players[chat_id].add(user.id)
 
-        if update.message.text.lower() == current_games[chat_id]['ans']:
-            # Cek minimal 2 orang
+        if text_input == current_games[chat_id]['ans']:
+            current_games[chat_id]['answered'] = True
+            
+            # Cek Minimal 2 Pemain
             if len(group_players[chat_id]) < 2:
-                await update.message.reply_text("⚠️ Jawaban benar, tapi poin tidak bertambah karena minimal harus ada 2 pemain aktif agar tidak curang!")
+                await update.message.reply_text(f"✅ **{user.first_name}**, jawaban benar! Tapi poin tidak masuk karena butuh minimal 2 orang di grup ini agar tidak curang.")
             else:
                 uid = str(user.id)
                 if uid not in db['users']: db['users'][uid] = {"name": user.first_name, "pts": 0}
                 db['users'][uid]['pts'] += 10
                 save_db()
                 
-                top = sorted(db['users'].items(), key=lambda x: x[1]['pts'], reverse=True)[:3]
-                lb = "\n".join([f"{i+1}. {u[1]['name']} ({u[1]['pts']} pts)" for i, u in enumerate(top)])
-                await update.message.reply_text(f"🎯 **{user.first_name} BENAR!** (+10 Pts)\n\n🏆 **TOP GLOBAL:**\n{lb}")
+                # Leaderboard 1-3
+                top_global = sorted(db['users'].items(), key=lambda x: x[1]['pts'], reverse=True)[:3]
+                lb = "🏆 **LEADERBOARD GLOBAL (TOP 3)** 🏆\n"
+                for i, (tid, d) in enumerate(top_global, 1):
+                    lb += f"{i}. {d['name']} — {d['pts']} Pts\n"
+                
+                await update.message.reply_text(f"🎯 **{user.first_name} BENAR!** (+10 Poin)\n\n{lb}")
 
-            current_games[chat_id]['answered'] = True
             await asyncio.sleep(3)
             await send_question(context, chat_id, current_games[chat_id]['cat'])
 
 def main():
     app = Application.builder().token(TOKEN).build()
+    
     app.add_handler(CommandHandler("admin", admin_panel))
     app.add_handler(CommandHandler("start", start_handler))
     app.add_handler(CallbackQueryHandler(on_callback))
-    app.add_handler(MessageHandler(filters.ALL, handle_msg))
+    # Handler ini menangkap SEMUA pesan (Foto/Text) untuk deteksi jawaban & input admin
+    app.add_handler(MessageHandler(filters.ALL, handle_all_messages))
+    
+    print("Bot is running...")
     app.run_polling()
 
 if __name__ == '__main__':
