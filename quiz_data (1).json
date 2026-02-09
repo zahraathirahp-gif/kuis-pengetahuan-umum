@@ -1,0 +1,384 @@
+{
+    "users": {},
+    "groups": [
+        -1003728023193
+    ],
+    "questions": {
+        "\u26bdolahraga": [
+            {
+                "q": "pemain sepakbola terbaik",
+                "a": "Messi"
+            },
+            {
+                "q": "dalam sepakbola 1 babak berapa menit",
+                "a": "45 menit"
+            },
+            {
+                "q": "piala dunia pertama kali diadakan tahun berapa",
+                "a": "1930"
+            },
+            {
+                "q": "pemenang piala dunia 2014",
+                "a": "jerman"
+            },
+            {
+                "q": "negara pertama yang menang piala dunia sebagai tuan rumah",
+                "a": "Uruguay"
+            },
+            {
+                "q": "Atlet dengan medali Olimpiade terbanyak sepanjang sejarah",
+                "a": "Michael Phelps"
+            },
+            {
+                "q": "Klub sepak bola dengan gelar Liga Champions UEFA terbanyak",
+                "a": "Real Madrid"
+            },
+            {
+                "q": "Atlet pertama yang menembus rekor lari 100 meter di bawah 9,60 detik",
+                "a": "Usain Bolt"
+            },
+            {
+                "q": "Klub dengan jumlah trofi resmi terbanyak di dunia (sepak bola)",
+                "a": "Al Ahly"
+            },
+            {
+                "q": "Olahraga yang berasal dari Jepang dan masuk Olimpiade Tokyo 2020",
+                "a": "Karate"
+            },
+            {
+                "q": "Pebulutangkis tunggal putra yang pernah memegang ranking 1 dunia terlama",
+                "a": "Lee Chong Wei"
+            },
+            {
+                "q": "Negara yang memenangkan Piala Dunia FIFA tanpa kebobolan satu gol pun",
+                "a": "Italia"
+            },
+            {
+                "q": "Pemain sepak bola dengan gol terbanyak dalam satu tahun kalender (rekor resmi FIFA)",
+                "a": "Lionel Messi"
+            },
+            {
+                "q": "Klub sepak bola yang pertama kali meraih treble kontinental (liga, piala domestik, UCL)",
+                "a": "Celtic"
+            },
+            {
+                "q": "Pebalap MotoGP dengan gelar juara dunia terbanyak di kelas utama",
+                "a": "Valentino Rossi"
+            },
+            {
+                "q": "Stadion yang pertama kali digunakan untuk final Piala Dunia FIFA",
+                "a": "Estadio Centenario"
+            },
+            {
+                "q": "Negara yang pertama kali menjuarai Piala Dunia U-17 FIFA",
+                "a": "Uni Soviet"
+            },
+            {
+                "q": "Atlet Indonesia pertama yang meraih emas Olimpiade",
+                "a": "Susi Susanti"
+            }
+        ],
+        "\ud83c\udfc3\ud83c\udffb\u200d\u2640\ufe0f\ud83c\udf31biologi": [
+            {
+                "q": "Penyakit flu disebabkan oleh virus",
+                "a": "Influenza"
+            },
+            {
+                "q": "Zat hijau daun yang berperan penting dalam fotosintesis",
+                "a": "Klorofil"
+            },
+            {
+                "q": "Makhluk hidup yang tidak memiliki inti sel sejati",
+                "a": "Prokariota"
+            },
+            {
+                "q": "Proses pembelahan sel yang menghasilkan dua sel anak identik",
+                "a": "Mitosis"
+            },
+            {
+                "q": "Organ pada manusia yang menghasilkan insulin",
+                "a": "Pankreas"
+            },
+            {
+                "q": "Ilmuwan yang dikenal sebagai Bapak Genetika",
+                "a": "Gregor Mendel"
+            },
+            {
+                "q": "Tahap pembelahan mitosis saat kromosom berjajar di bidang ekuator",
+                "a": "Metafase"
+            },
+            {
+                "q": "Ikatan yang menyatukan asam amino dalam protein",
+                "a": "Ikatan peptida"
+            },
+            {
+                "q": "Proses perubahan energi cahaya menjadi energi kimia",
+                "a": "Fotosintesis"
+            }
+        ],
+        "\ud83c\udfb5musik": [
+            {
+                "q": "penyanyi wildflower",
+                "a": "Billie eilish"
+            },
+            {
+                "q": "penyanyi dengan penjualan album terbanyak sepanjang sejarah",
+                "a": "Michael Jackson"
+            },
+            {
+                "q": "pemenangnya Grammy award terbanyak",
+                "a": "Beyonce"
+            },
+            {
+                "q": "penyanyi dengan penjualan album tertinggi dalam Minggu pertama AS",
+                "a": "Adele"
+            },
+            {
+                "q": "siapa penyanyi lagu shape of you",
+                "a": "Ed Sheeran"
+            },
+            {
+                "q": "grup K-Pop yang dikenal dengan fandom ARMY",
+                "a": "bts"
+            },
+            {
+                "q": "penyanyi wanita dengan julukan \"queen of pop\"",
+                "a": "Madonna"
+            },
+            {
+                "q": "genre musik khas Jamaika",
+                "a": "reggae"
+            },
+            {
+                "q": "alat musik yang dimainkan dengan cara dipetik",
+                "a": "gitar"
+            },
+            {
+                "q": "grup musik legendaris dengan logo lidah menjulur",
+                "a": "the rolling Stones"
+            },
+            {
+                "q": "siapa penyanyi lagu \"fix you\"",
+                "a": "Coldplay"
+            },
+            {
+                "q": "genre musik yang identik dengan distorsi gitar",
+                "a": "rock"
+            },
+            {
+                "q": "siapa pencipta lagu \"Indonesia Raya\"",
+                "a": "wr Supratman"
+            },
+            {
+                "q": "Genre musik yang berasal dari New Orleans pada awal abad ke-20",
+                "a": "Jazz"
+            },
+            {
+                "q": "Komposer klasik yang dijuluki \u201cBapak Musik Klasik\u201d",
+                "a": "Joseph Haydn"
+            },
+            {
+                "q": "Alat musik tradisional Indonesia yang diakui UNESCO sebagai Warisan Budaya Dunia",
+                "a": "Angklung"
+            },
+            {
+                "q": "Grup band asal Inggris yang lagunya \u201cYesterday\u201d sangat terkenal",
+                "a": "The Beatles"
+            },
+            {
+                "q": "Istilah musik untuk bernyanyi tanpa iringan musik",
+                "a": "A cappella"
+            },
+            {
+                "q": "Alat musik yang dimainkan dengan ditiup",
+                "a": "Seruling"
+            },
+            {
+                "q": "Lagu nasional Indonesia \u201cBagimu Negeri\u201d diciptakan oleh siapa?",
+                "a": "Kusbini"
+            },
+            {
+                "q": "Band Indonesia yang terkenal dengan lagu \u201cDan\"",
+                "a": "Sheila On 7"
+            },
+            {
+                "q": "Penyanyi wanita dengan lagu \u201cFirework\u201d",
+                "a": "Katy Perry"
+            },
+            {
+                "q": "Penyanyi pria terkenal dengan lagu \"Starboy\"",
+                "a": "The Weeknd"
+            },
+            {
+                "q": "Grup K-pop yang dikenal dengan lagu \u201cHow You Like That\u201d",
+                "a": "BLACKPINK"
+            }
+        ],
+        "\ud83c\udf0dnegara": [
+            {
+                "q": "negara yang terkenal dengan menara Eiffel",
+                "a": "Prancis"
+            },
+            {
+                "q": "negara yang punya lebih dari 17.000 Pulau",
+                "a": "Indonesia"
+            },
+            {
+                "q": "negara yang terkenal dengan k-pop",
+                "a": "Korea Selatan"
+            },
+            {
+                "q": "negara yang tidak memiliki ibukota resmi dan terkenal dengan jam tangan",
+                "a": "Swiss"
+            },
+            {
+                "q": "negara paling kecil yang berada didalam kota roma",
+                "a": "Vatikan"
+            },
+            {
+                "q": "negara yang dijuluki \"negeri matahari terbit\"",
+                "a": "jepang"
+            },
+            {
+                "q": "negara di Afrika yang tidak pernah dijajah secara resmi oleh eropa",
+                "a": "Ethiopia"
+            },
+            {
+                "q": "negara yang tidak punya satu pun sungai alami",
+                "a": "arab saudi"
+            },
+            {
+                "q": "negara yang punya garis pantai terpanjang didunia",
+                "a": "kanada"
+            },
+            {
+                "q": "negara yang punya lebih banyak domba daripada manusia",
+                "a": "Selandia Baru"
+            },
+            {
+                "q": "Negara yang semua penduduknya wajib ikut pelatihan militer tanpa batas waktu jelas",
+                "a": "Eritrea"
+            },
+            {
+                "q": "Negara yang punya lebih banyak sepeda daripada jumlah penduduknya",
+                "a": "Belanda"
+            },
+            {
+                "q": "Negara yang secara resmi tidak memiliki bahasa nasional",
+                "a": "Amerika Serikat"
+            },
+            {
+                "q": "Negara yang seluruh wilayahnya berada di ketinggian di atas 1.000 mdpl",
+                "a": "Lesotho"
+            },
+            {
+                "q": "Negara yang memiliki jalur kereta api terpanjang di dunia",
+                "a": "Rusia"
+            },
+            {
+                "q": "Negara yang punya lebih banyak piramida daripada Mesir",
+                "a": "Sudan"
+            },
+            {
+                "q": "Negara yang punya wilayah daratan lebih kecil daripada bandara utamanya",
+                "a": "Monako"
+            },
+            {
+                "q": "Negara yang punya lebih banyak pohon daripada jumlah penduduk",
+                "a": "Finlandia"
+            },
+            {
+                "q": "Negara yang pernah mengubah arah mengemudi nasional dari kiri ke kanan dalam semalam",
+                "a": "Swedia"
+            },
+            {
+                "q": "Negara yang tidak punya sungai, danau, maupun sumber air tawar alami permanen",
+                "a": "Kuwait"
+            },
+            {
+                "q": "Negara yang paling sering memenangkan Piala Dunia FIFA",
+                "a": "Brazil"
+            },
+            {
+                "q": "Negara dengan jumlah bahasa terbanyak di dunia",
+                "a": "Papua Nugini"
+            }
+        ],
+        "\ud83d\udcdc sejarah": [
+            {
+                "q": "Perang dunia pertama dimulai pada tahun berapa?",
+                "a": "1914"
+            },
+            {
+                "q": "Tembok Berlin runtuh pada tahun berapa?",
+                "a": "1989"
+            },
+            {
+                "q": "Penjelajah yang dikenal menemukan benua Amerika pada 1492",
+                "a": "Christopher Columbus"
+            },
+            {
+                "q": "Kerajaan terbesar yang pernah ada di Nusantara",
+                "a": "Majapahit"
+            },
+            {
+                "q": "Presiden pertama Amerika Serikat",
+                "a": "George Washington"
+            },
+            {
+                "q": "Kota di Jepang yang pertama kali dijatuhi bom atom",
+                "a": "Hiroshima"
+            },
+            {
+                "q": "Bangsa Eropa pertama yang datang ke Indonesia",
+                "a": "Portugis"
+            },
+            {
+                "q": "Tokoh yang memimpin Revolusi Rusia 1917",
+                "a": "Vladimir Lenin"
+            },
+            {
+                "q": "Tokoh Jerman yang menjadi pemimpin Nazi",
+                "a": "Adolf Hitler"
+            },
+            {
+                "q": "Perjanjian yang mengakhiri Perang Dunia I",
+                "a": "Versailles"
+            },
+            {
+                "q": "Peradaban kuno yang berkembang di lembah Sungai Nil",
+                "a": "Mesir Kuno"
+            },
+            {
+                "q": "Tembok Besar Cina dibangun terutama untuk melindungi dari serangan bangsa",
+                "a": "Mongol"
+            },
+            {
+                "q": "Kekaisaran yang dipimpin oleh Julius Caesar",
+                "a": "Kekaisaran Romawi"
+            },
+            {
+                "q": "Bangunan bersejarah Colosseum berada di kota mana?",
+                "a": "Roma"
+            },
+            {
+                "q": "Kota yang menjadi pusat peradaban Yunani Kuno",
+                "a": "Athena"
+            },
+            {
+                "q": "Kota yang terkubur akibat letusan Gunung Vesuvius tahun 79 M",
+                "a": "Pompeii"
+            },
+            {
+                "q": "Tokoh Afrika Selatan yang mengakhiri sistem apartheid",
+                "a": "Nelson Mandela"
+            },
+            {
+                "q": "Istilah kebijakan pemisahan ras di Afrika Selatan",
+                "a": "Apartheid"
+            }
+        ]
+    },
+    "ads_text": "Iklan Kosong.",
+    "ads_photo": null
+}
