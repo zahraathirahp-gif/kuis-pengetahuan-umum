@@ -43,6 +43,8 @@ def format_hint(answer, revealed_indices=None):
 
 current_games = {} 
 lobby_data = {} 
+# Memori untuk soal yang sudah keluar agar tidak berulang
+played_questions = {} # {chat_id: [list_of_question_texts]}
 
 async def post_init(application: Application):
     user_commands = [
@@ -56,19 +58,34 @@ async def post_init(application: Application):
 async def send_question(context, chat_id, category):
     if chat_id in current_games and 'task' in current_games[chat_id]:
         current_games[chat_id]['task'].cancel()
-    q_list = db['questions'].get(category, [])
-    if not q_list: return await context.bot.send_message(chat_id, "Soal kosong.")
-    q_data = random.choice(q_list)
+    
+    all_q = db['questions'].get(category, [])
+    if not all_q: return await context.bot.send_message(chat_id, "Soal kosong.")
+
+    # Filter soal agar tidak mengulang
+    if chat_id not in played_questions: played_questions[chat_id] = []
+    available_q = [q for q in all_q if q['q'] not in played_questions[chat_id]]
+
+    # Jika semua soal sudah dimainkan, reset memori untuk kategori ini
+    if not available_q:
+        played_questions[chat_id] = []
+        available_q = all_q
+
+    q_data = random.choice(available_q)
+    played_questions[chat_id].append(q_data['q']) # Tandai sudah dimainkan
+    
     ans_clean = q_data['a'].lower().strip()
     initial_reveal = {0, len(ans_clean)-1}
     text = f"🎮 {category}\n\n❓ {q_data['q']}\n🔤 Clue: `{format_hint(ans_clean, initial_reveal)}`"
     kb = [[InlineKeyboardButton("⏭ Next", callback_data="game_skip"), InlineKeyboardButton("🛑 Stop", callback_data="game_stop")]]
+    
     await context.bot.send_message(chat_id, text, parse_mode='Markdown', reply_markup=InlineKeyboardMarkup(kb))
+    # Timer diubah ke 30 detik sesuai permintaan
     current_games[chat_id] = {"ans": ans_clean, "cat": category, "task": asyncio.create_task(quiz_timer(context, chat_id, category, ans_clean)), "start_time": time.time(), "revealed": initial_reveal}
 
 async def quiz_timer(context, chat_id, category, correct_ans):
     try:
-        await asyncio.sleep(20)
+        await asyncio.sleep(30) # GANTI KE 30 DETIK
         if chat_id in current_games:
             del current_games[chat_id]
             await context.bot.send_message(chat_id, f"⌛ Habis! Jawaban: {correct_ans.upper()}")
@@ -87,7 +104,7 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if chat_type in ["group", "supergroup"] and chat_id not in db['groups']:
         db['groups'].append(chat_id); save_db()
 
-    # --- ADMIN INPUT LOGIC (HANYA DI PRIVATE CHAT) ---
+    # --- ADMIN LOGIC (Private Only) ---
     state = context.user_data.get('state')
     if state and uid == ADMIN_ID and chat_type == "private":
         if state == 'w_ads':
@@ -97,6 +114,12 @@ async def handle_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.user_data['new_q'] = {"cat": raw_text}; context.user_data['state'] = 'w_q_ques'
             return await msg.reply_text("Kirim Soalnya:")
         elif state == 'w_q_ques':
+            # Cek Duplikasi Soal
+            cat = context.user_data['new_q']['cat']
+            existing_qs = [q['q'].lower() for q in db['questions'].get(cat, [])]
+            if raw_text.lower() in existing_qs:
+                return await msg.reply_text("⚠️ SOAL SUDAH PERNAH ADA! Gunakan soal lain:")
+            
             context.user_data['new_q']['q'] = raw_text; context.user_data['state'] = 'w_q_ans'
             return await msg.reply_text("Kirim Jawabannya:")
         elif state == 'w_q_ans':
@@ -169,39 +192,39 @@ async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await q.message.edit_text(f"🎮 **LOBBY**\n\nPlayer: \n{players_str}", reply_markup=InlineKeyboardMarkup(kb))
     elif d == "lobby_start":
         if cid in lobby_data:
-            if uid != lobby_data[cid]['host']: return await q.answer("Hanya Host yang bisa mulai!", show_alert=True)
+            if uid != lobby_data[cid]['host']: return await q.answer("Hanya Host!", show_alert=True)
             kb = [[InlineKeyboardButton(f"📂 {c}", callback_data=f"start_{c}")] for c in db['questions'].keys()]
             await q.message.edit_text("PILIH KATEGORI:", reply_markup=InlineKeyboardMarkup(kb))
     elif d.startswith('start_'):
         await q.message.delete(); await send_question(context, cid, d.split('_')[1])
     elif d == 'adm_q':
         kb = [[InlineKeyboardButton(c, callback_data=f"selcat_{c}")] for c in db['questions'].keys()]
-        kb.append([InlineKeyboardButton("➕ Baru", callback_data="new_cat")]); await q.message.reply_text("Pilih Kategori:", reply_markup=InlineKeyboardMarkup(kb))
+        kb.append([InlineKeyboardButton("➕ Baru", callback_data="new_cat")]); await q.message.reply_text("Kategori:", reply_markup=InlineKeyboardMarkup(kb))
     elif d.startswith('selcat_'):
         cat = d.replace('selcat_', '')
-        kb = [[InlineKeyboardButton("➕ Tambah Soal", callback_data=f"addq_{cat}")], [InlineKeyboardButton("🗑️ Hapus Soal", callback_data=f"delq_{cat}")]]
+        kb = [[InlineKeyboardButton("➕ Tambah", callback_data=f"addq_{cat}")], [InlineKeyboardButton("🗑️ Hapus", callback_data=f"delq_{cat}")]]
         await q.message.reply_text(f"Kategori: {cat}", reply_markup=InlineKeyboardMarkup(kb))
     elif d.startswith('addq_'):
-        context.user_data['state'] = 'w_q_ques'; context.user_data['new_q'] = {"cat": d.replace('addq_', '')}; await q.message.reply_text("Kirim Soal:")
+        context.user_data['state'] = 'w_q_ques'; context.user_data['new_q'] = {"cat": d.replace('addq_', '')}; await q.message.reply_text("Kirim Soal (PC):")
     elif d.startswith('delq_'):
         cat = d.replace('delq_', ''); q_list = db['questions'].get(cat, [])
         if not q_list: return await q.answer("Kosong!", show_alert=True)
         kb = [[InlineKeyboardButton(f"{sq['q'][:20]}...", callback_data=f"remq_{cat}_{i}")] for i, sq in enumerate(q_list)]
-        await q.message.reply_text("Klik soal yang ingin dihapus:", reply_markup=InlineKeyboardMarkup(kb))
+        await q.message.reply_text("Klik soal untuk hapus:", reply_markup=InlineKeyboardMarkup(kb))
     elif d.startswith('remq_'):
         _, cat, idx = d.split('_'); db['questions'][cat].pop(int(idx)); save_db()
-        await q.message.edit_text("✅ Soal dihapus!"); await q.answer()
+        await q.message.edit_text("✅ Terhapus!"); await q.answer()
     elif d == "new_cat":
-        context.user_data['state'] = 'w_q_cat_name'; await q.message.reply_text("Kirim Nama Kategori Baru (lewat PC):")
+        context.user_data['state'] = 'w_q_cat_name'; await q.message.reply_text("Nama Kategori Baru (PC):")
     elif d == 'adm_edit_cat':
         kb = [[InlineKeyboardButton(c, callback_data=f"editcat_{c}")] for c in db['questions'].keys()]
-        await q.message.reply_text("Pilih Kategori untuk di-edit namanya:", reply_markup=InlineKeyboardMarkup(kb))
+        await q.message.reply_text("Pilih Kategori untuk diedit:", reply_markup=InlineKeyboardMarkup(kb))
     elif d.startswith('editcat_'):
         context.user_data['state'] = 'w_edit_cat_new'; context.user_data['old_cat_name'] = d.replace('editcat_', '')
-        await q.message.reply_text(f"Kirim nama baru untuk {context.user_data['old_cat_name']} (lewat PC):")
+        await q.message.reply_text(f"Kirim nama baru (PC):")
     elif d == 'adm_db': save_db(); await q.message.reply_document(open(DATA_FILE, 'rb'))
-    elif d == 'adm_ads': context.user_data['state'] = 'w_ads'; await q.message.reply_text("Kirim Iklan (lewat PC):")
-    elif d == 'adm_bc': context.user_data['state'] = 'w_bc'; await q.message.reply_text("Kirim BC (lewat PC):")
+    elif d == 'adm_ads': context.user_data['state'] = 'w_ads'; await q.message.reply_text("Kirim Iklan (PC):")
+    elif d == 'adm_bc': context.user_data['state'] = 'w_bc'; await q.message.reply_text("Kirim BC (PC):")
     elif d in ['game_skip', 'game_stop'] and cid in current_games:
         current_games[cid]['task'].cancel(); cat = current_games[cid]['cat']
         if d == 'game_skip': del current_games[cid]; await send_question(context, cid, cat)
